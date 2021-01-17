@@ -126,7 +126,7 @@ const bool show_Wt = false;
 /* Function : main
 The beginning of my program for this extra credit implimentation of SHA-256.
 First it checks to see if testing is enabled by lack of command line arguments,
-causing it to hash "abc" and comparing it to a hard coded hash I know is correct.
+causing it to hash "ABC_STRING" and comparing it to a hard coded hash I know is correct.
 
 1) Converts the ASCII string into n 8 bit segments representing the ASCII value
 of each character.

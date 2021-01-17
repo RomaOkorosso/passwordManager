@@ -8,15 +8,18 @@
 #include <vector>
 #include <winbase.h>
 #include <winuser.h>
+#include "encrypt.h"
 
 #ifndef MAIN_CPP_PM_H
 #define MAIN_CPP_PM_H
 
 
 struct PasswordManager {
+
     std::string path = "path.txt";
     std::string pathToMasterPass = "masterPass.txt";
-    bool isLog = false;
+    bool hasLogin = false;
+    std::string masterPass = getMasterPass();
 
 public:
 
@@ -41,17 +44,17 @@ public:
             createFile(pathToMasterPass);
             ofstream fout(pathToMasterPass);
             fout << toCheck;
-            isLog = true;
+            hasLogin = true;
         }
 
         if (toCheck == pass) {
             cout << "Success!\n";
-            isLog = true;
+            hasLogin = true;
         } else if (pass.empty()) {
             ofstream fout(pathToMasterPass);
             fout << toCheck;
             cout << "Master pass file is empty -> Success!\n";
-            isLog = true;
+            hasLogin = true;
         } else {
             cout << "old mp: " << pass << '\n';
             cout << "pass to check is: " << toCheck << '\n';
@@ -63,10 +66,10 @@ public:
         std::vector<std::string> siteLoginPassVec;
         parserSiteLoginPass(siteLoginPassVec, toAdd);
         std::string siteLogin = siteLoginPassVec[0];
-        std::string pass = siteLoginPassVec[1];
+        std::string newPass = siteLoginPassVec[1];
         std::vector<std::string> siteLoginVec = getSiteAndLogin(siteLogin);
-        std::string password = getPassword(siteLoginVec[0], siteLoginVec[1]);
-        cout << "password: " << password << "\n";
+        std::string oldPass = getEncryptedPassword(siteLoginVec[0], siteLoginVec[1]);
+
         std::string pathToPass = getPathToPass();
 
         if (!isFileExists(pathToPass))
@@ -74,25 +77,30 @@ public:
 
         ifstream fin(pathToPass);
 
-        // TODO add encode pass
-        if (password != "-1") {
+        newPass = encode(newPass, masterPass);
+        cout << "old password: " << oldPass << "\n";
+        cout << "new password: " << newPass << '\n';
+        if (oldPass != "-1") {
             std::string replaceStrFromFile = readWholeFile(pathToPass);
             cout << "replaceStrFromFile:\n" << replaceStrFromFile << '\n';
-            int left = replaceStrFromFile.find(password);
-            pass.insert(0, 1, ' ');
+            int left = replaceStrFromFile.find(oldPass);
+            newPass.insert(0, 1, ' ');
             int len;
-            if (pass.length() < password.length())
-                len = pass.length();
+
+            if (newPass.length() < oldPass.length())
+                len = newPass.length();
             else
-                len = password.length();
-            replaceStrFromFile.replace(left, len, pass);
+                len = oldPass.length();
+
+            replaceStrFromFile.replace(left, len, newPass);
             fin.close();
             ofstream fout(pathToPass);
             cout << "Password for " << siteLogin << " has been changed\n";
         } else {
             fin.close();
             ofstream out(pathToPass, ios::app);
-            pass += '\n';
+            newPass += '\n';
+            out << siteLogin << ' ' << newPass;
             cout << "Password for " << siteLogin << " has been added\n";
         }
 
@@ -102,22 +110,10 @@ public:
 
     }
 
-    std::string getPassword(const std::string &site, const std::string &login) {
-        using namespace std;
-        ifstream fin(getPathToPass());
-        if (!fin) {
-            cout << "Cannot find file, try again!\n";
-        }
-        string tmp;
-        while (!fin.eof()) {
-            getline(fin, tmp);
-            if (tmp.find(site) != -1 and tmp.find(login) != -1) {
-                int left = tmp.find(' ');
-                string password = tmp.substr(left, tmp.length() - 1);
-                return password;
-            }
-        }
-        return "-1";
+    void getPassword(const std::string &siteLoginStr) {
+        std::vector<string> siteLoginVec = getSiteAndLogin(siteLoginStr);
+        std::string encryptedPass = getEncryptedPassword(siteLoginVec[0], siteLoginVec[1]);
+        copyDataToClipboard(decode(encryptedPass, masterPass));
     }
 
     void flagHandler(int argc, char *argv[]) {
@@ -142,7 +138,7 @@ public:
                 } else {
                     vector<string> siteAndLogin;
                     siteAndLogin = getSiteAndLogin(fullStr);
-                    string password = getPassword(siteAndLogin[0], siteAndLogin[1]);
+                    string password = getEncryptedPassword(siteAndLogin[0], siteAndLogin[1]);
                     if (password == "-1")
                         cout << "Have no any same site login pair\n";
                     else {
@@ -159,13 +155,6 @@ public:
     }
 
 private:
-
-    static std::string readWholeFile(const std::string &filename) {
-        ifstream fin(filename);
-        std::string toReturn((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
-        fin.close();
-        return toReturn;
-    }
 
     // BELOW IS WORKABLE METHODS
     std::string HELP_TEXT = "usage: ./pm.exe [options]\n--help\t\t: help information\n--config [path]\t\t:"\
@@ -185,12 +174,43 @@ private:
         return pathToPass;
     }
 
+    void editPathToPass(const std::string &newPath) const {
+        ofstream fout(path, ios::trunc);
+        fout << newPath;
+        fout.close();
+    }
+
     std::string getMasterPass() {
         ifstream fin(pathToMasterPass);
         std::string masterPass;
         getline(fin, masterPass);
 
         return masterPass;
+    }
+
+    std::string getEncryptedPassword(const std::string &site, const std::string &login) {
+        using namespace std;
+        ifstream fin(getPathToPass());
+        if (!fin) {
+            cout << "Cannot find file, try again!\n";
+        }
+        string tmp;
+        while (!fin.eof()) {
+            getline(fin, tmp);
+            if (tmp.find(site) != -1 and tmp.find(login) != -1) {
+                int left = tmp.find(' ');
+                string password = tmp.substr(left + 1, tmp.length() - 1);
+                return password;
+            }
+        }
+        return "-1";
+    }
+
+    static std::string readWholeFile(const std::string &filename) {
+        ifstream fin(filename);
+        std::string toReturn((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
+        fin.close();
+        return toReturn;
     }
 
     static void parserSiteLoginPass(std::vector<std::string> &siteLoginAndPassVec, const std::string &toParse) {
@@ -202,7 +222,7 @@ private:
             std::cout << "Site:Login pair and password must be separated by whitespace, pls try again\n";
         } else {
             int left = toParse.find(' ');
-            int len = toParse.length() - 1;
+            unsigned int len = toParse.length() - 1;
             siteLoginAndPassVec.push_back(toParse.substr(0, left));
             siteLoginAndPassVec.push_back(toParse.substr(left + 1, len));
             cout << "parse success\n";

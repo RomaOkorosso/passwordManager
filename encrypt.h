@@ -2,10 +2,9 @@
 #include <fstream>
 #include "Windows.h"
 
-const std::string ABC_STRING = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=_!@#%:?(){};:<>[]`~";
 
 std::string encode(const std::string &toEncode, const std::string &key) {
-
+    std::string ABC_STRING = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=_!@#%:?(){};:<>[]`~";
     int len = ABC_STRING.length();
     string mes = toEncode, codeMes;
     int count_rot = 0;
@@ -20,6 +19,7 @@ std::string encode(const std::string &toEncode, const std::string &key) {
 }
 
 std::string decode(const std::string &toDecode, const std::string &key) {
+    std::string ABC_STRING = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=_!@#%:?(){};:<>[]`~";
     int len = ABC_STRING.length();
     string mes = toDecode, decodeMes;
     int count_rot = 0;
