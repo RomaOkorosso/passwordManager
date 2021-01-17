@@ -1,76 +1,34 @@
-//
-// Created by Roma on 07.01.2021.
-//
 #include <string>
-#include <cstring>
-#include <algorithm>
+#include <fstream>
+#include "Windows.h"
 
-#define N 256
+const std::string ABC_STRING = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=_!@#%:?(){};:<>[]`~";
 
-#ifndef MAIN_CPP_ENCRYPT_H
-#define MAIN_CPP_ENCRYPT_H
+std::string encode(const std::string &toEncode, const std::string &key) {
 
-struct RC4 {
-    void swap(char *a, char *b) {
-        int tmp = *a;
-        *a = *b;
-        *b = tmp;
-    }
-
-    int KSA(std::string key, std::string &S) {
-        int len = key.length();
-        int j = 0;
-        for (int i = 0; i < N; i++)
-            S[i] = i;
-
-        for (int i = 0; i < N; i++) {
-            j = (j + (int) S[i] + key[i % len]) % N;
-            swap(&S[i], &S[j]);
-        }
-        return 0;
-    }
-
-    int PRGA(std::string &S, std::string plaintext, std::string &ciphertext) {
-        int i = 0;
-        int j = 0;
-
-        for (size_t n = 0, len = plaintext.length(); n < len; n++) {
-            i = (i + 1) % N;
-            j = (j + S[i]) % N;
-            swap(&S[i], &S[j]);
-            int rnd = S[(S[i] + S[j]) % N];
-            ciphertext[n] = rnd ^ plaintext[n];
-        }
-
-        return 0;
-    }
-
-    void fixNewLine(std::string &S){
-        int left = S.find('\n');
-        while (left != -1){
-            S.replace(left, 1, "BAN");
-            left = S.find('\n', left);
+    int len = ABC_STRING.length();
+    string mes = toEncode, codeMes;
+    int count_rot = 0;
+    for (auto i:mes) {
+        if (i == ' ') codeMes.push_back(' ');
+        if (ABC_STRING.find(i) != -1) {
+            codeMes.push_back(ABC_STRING[(ABC_STRING.find(i) + ABC_STRING.find(key[count_rot % key.size()])) % len]);
+            count_rot++;
         }
     }
+    return codeMes;
+}
 
-    std::string genRC4(std::string key, std::string plaintext, std::string ciphertext) {
-
-        std::string S(N, ' ');
-        KSA(key, S);
-
-        PRGA(S, plaintext, ciphertext);
-        cout << S << '\n';
-        // fixNewLine(S);
-        cout << '\n' << S << '\n';
-
-        for (int i = 0; i < S.length(); i++){
-
+std::string decode(const std::string &toDecode, const std::string &key) {
+    int len = ABC_STRING.length();
+    string mes = toDecode, decodeMes;
+    int count_rot = 0;
+    for (auto i:mes) {
+        if (i == ' ') decodeMes.push_back(' ');
+        if (ABC_STRING.find(i) != -1) {
+            decodeMes.push_back(ABC_STRING[(ABC_STRING.find(i) - ABC_STRING.find(key[count_rot % key.size()])) % len]);
+            count_rot++;
         }
-
-        return S;
-        //ciphertext
-        // return 0;
     }
-};
-
-#endif //MAIN_CPP_ENCRYPT_H
+    return decodeMes;
+}

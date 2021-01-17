@@ -77,18 +77,22 @@ public:
         // TODO add encode pass
         if (password != "-1") {
             std::string replaceStrFromFile = readWholeFile(pathToPass);
-            cout << "replaceStrFromFile: " << replaceStrFromFile << '\n';
+            cout << "replaceStrFromFile:\n" << replaceStrFromFile << '\n';
             int left = replaceStrFromFile.find(password);
-            int len = replaceStrFromFile.length() - 1;
+            pass.insert(0, 1, ' ');
+            int len;
+            if (pass.length() < password.length())
+                len = pass.length();
+            else
+                len = password.length();
             replaceStrFromFile.replace(left, len, pass);
             fin.close();
             ofstream fout(pathToPass);
-            fout << replaceStrFromFile;
             cout << "Password for " << siteLogin << " has been changed\n";
         } else {
             fin.close();
             ofstream out(pathToPass, ios::app);
-            out << siteLogin << ' ' << pass << '\n';
+            pass += '\n';
             cout << "Password for " << siteLogin << " has been added\n";
         }
 
@@ -105,12 +109,9 @@ public:
             cout << "Cannot find file, try again!\n";
         }
         string tmp;
-        bool flag = false;
         while (!fin.eof()) {
             getline(fin, tmp);
-            cout << "test: " << tmp << '\n';
             if (tmp.find(site) != -1 and tmp.find(login) != -1) {
-                cout << "tmp: " << tmp << '\n';
                 int left = tmp.find(' ');
                 string password = tmp.substr(left, tmp.length() - 1);
                 return password;
@@ -160,13 +161,9 @@ public:
 private:
 
     static std::string readWholeFile(const std::string &filename) {
-        std::string toReturn;
         ifstream fin(filename);
-        while (!fin.eof()) {
-            std::string tmp;
-            getline(fin, tmp);
-            toReturn.assign(tmp);
-        }
+        std::string toReturn((std::istreambuf_iterator<char>(fin)), std::istreambuf_iterator<char>());
+        fin.close();
         return toReturn;
     }
 
@@ -264,86 +261,5 @@ private:
         return toReturn;
     }
 };
-
-// ConstraintBuilder(
-//      (parent <- view).padding(8),
-//      (view -> parent).padding(8),
-//      view ^ parent,
-//      view . parent
-//      ).activate()
-//
-//enum ConstraintType {
-//    case leading
-//    case trailing
-//    case top
-//    case bottom
-//    case center
-//};
-//
-//operator <- (lhs: UIView, rhs: UIView) -> Constraint {
-//    Constraint(lhs, rhs, constraintType: .leading)
-//}
-//
-//operator -> (lhs: UIView, rhs: UIView) -> Constraint {
-//    Constraint(lhs, rhs, constraintType: .trailing)
-//}
-//
-//operator ^ (lhs: UIView, rhs: UIView) -> Constraint {
-//    Constraint(lhs, rhs, constraintType: .top)
-//}
-//
-//operator . (lhs: UIView, rhs: UIView) -> Constraint {
-//    Constraint(lhs, rhs, constraintType: .bottom)
-//}
-//
-//
-//class Constraint {
-//    var view1, view2: UIView
-//    var padding: CGFloat
-//    var constraintType: ConstraintType
-//
-//    func padding(_ padding: Int) -> Constraint {
-//        self.padding = padding
-//        return self
-//    }
-//
-//    func buildConstraint() -> NSLayoutConstraint {
-//        var constraint: NSLayoutConstraint
-//        switch constraintType {
-//            case .leading:
-//                constraint = view2.leadingAnchor.constraint(view2.leadingAnchor, constant: padding)
-//            case .trailing:
-//                constraint = view1.trailingAnchor.constraint(view2.trailingAnchor, constant: padding)
-//            case .top:
-//                constraint = view1.topAnchor.constraint(view2.topAnchor, constant: padding)
-//            case .trailing:
-//                constraint = view1.bottomAnchor.constraint(view2.bottomAnchor, constant: padding)
-//            }
-//        return constraint
-//    }
-//
-//    init(_ view1: UIView, _ view2: UIView, constraintType: ConstraintType, _ padding: CGFloat = 0) {
-//        self.view1 = view1
-//        self.view2 = view2
-//        self.padding = padding
-//        self.constraintType = constraintType
-//    }
-//}
-//
-//class ConstraintBuilder {
-//
-//    let constraints: [Constraint]
-//
-//    func activate() {
-//        NSLayoutConstraint.activate(constraints.map { $0.buildConstraint() })
-//    }
-//
-//    init(_
-//    constraints: Constraint
-//    ...) {
-//        self.constraints = constraint
-//    }
-//
-//}
 
 #endif //MAIN_CPP_PM_H
