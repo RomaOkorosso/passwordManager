@@ -517,7 +517,7 @@ std::string mainHash(std::string toHash) {
     block = pad_to_512bits(block);
     block = resize_block(block);
     string hash = compute_hash(block);
-
+    
     return hash;
 }
 

@@ -56,57 +56,71 @@ public:
             cout << "Master pass file is empty -> Success!\n";
             hasLogin = true;
         } else {
-            cout << "old mp: " << pass << '\n';
-            cout << "pass to check is: " << toCheck << '\n';
             cout << "Error. Wrong password\n";
+            exit(0);
         }
     }
 
     void addPassword(const std::string &toAdd) {
         std::vector<std::string> siteLoginPassVec;
         parserSiteLoginPass(siteLoginPassVec, toAdd);
-        std::string siteLogin = siteLoginPassVec[0];
-        std::string newPass = siteLoginPassVec[1];
-        std::vector<std::string> siteLoginVec = getSiteAndLogin(siteLogin);
-        std::string oldPass = getEncryptedPassword(siteLoginVec[0], siteLoginVec[1]);
+        if (!empty(siteLoginPassVec)) {
+            std::string siteLogin = siteLoginPassVec[0];
+            std::string newPass = siteLoginPassVec[1];
+            std::vector<std::string> siteLoginVec = getSiteAndLogin(siteLogin);
+            std::string oldPass = getEncryptedPassword(siteLoginVec[0], siteLoginVec[1]);
 
-        std::string pathToPass = getPathToPass();
+            std::string pathToPass = getPathToPass();
 
-        if (!isFileExists(pathToPass))
-            createFile(pathToPass);
+            if (!isFileExists(pathToPass))
+                createFile(pathToPass);
 
-        ifstream fin(pathToPass);
+            ifstream fin(pathToPass);
 
-        newPass = encode(newPass, masterPass);
-        cout << "old password: " << oldPass << "\n";
-        cout << "new password: " << newPass << '\n';
-        if (oldPass != "-1") {
-            std::string replaceStrFromFile = readWholeFile(pathToPass);
-            cout << "replaceStrFromFile:\n" << replaceStrFromFile << '\n';
-            int left = replaceStrFromFile.find(oldPass);
-            newPass.insert(0, 1, ' ');
-            int len;
+            newPass = encode(newPass, masterPass);
+            cout << "old password: " << oldPass << "\n";
+            cout << "new password: " << newPass << '\n';
+            if (oldPass != "-1") {
+                std::string replaceStrFromFile = readWholeFile(pathToPass);
+                cout << "replaceStrFromFile:\n" << replaceStrFromFile << '\n';
+                int left = replaceStrFromFile.find(oldPass);
+                newPass.insert(0, 1, ' ');
+                int len = lenComp(newPass, oldPass);
 
-            if (newPass.length() < oldPass.length())
-                len = newPass.length();
-            else
-                len = oldPass.length();
-
-            replaceStrFromFile.replace(left, len, newPass);
-            fin.close();
-            ofstream fout(pathToPass);
-            cout << "Password for " << siteLogin << " has been changed\n";
-        } else {
-            fin.close();
-            ofstream out(pathToPass, ios::app);
-            newPass += '\n';
-            out << siteLogin << ' ' << newPass;
-            cout << "Password for " << siteLogin << " has been added\n";
+                replaceStrFromFile.replace(left, len, newPass);
+                fin.close();
+                ofstream fout(pathToPass);
+                cout << "Password for " << siteLogin << " has been changed\n";
+            } else {
+                fin.close();
+                ofstream out(pathToPass, ios::app);
+                newPass += '\n';
+                out << siteLogin << ' ' << newPass;
+                cout << "Password for " << siteLogin << " has been added\n";
+            }
         }
-
     }
 
-    std::string delPassword(const std::string &site, const std::string &login, const std::string &pass) {
+    void delPassword(const std::string &siteLoginPassToDel) {
+
+        if (siteLoginPassToDel.find(':') == -1) {
+            std::cout << "Site and login must be separated by ':' character, pls try again\n";
+        } else {
+            std::string fullFile = readWholeFile(getPathToPass());
+            int left = fullFile.find(siteLoginPassToDel);
+
+            if (left != -1) {
+                std::vector<std::string> siteLoginVec = getSiteAndLogin(siteLoginPassToDel);
+                std::string encPass = getEncryptedPassword(siteLoginVec[0], siteLoginVec[1]);
+                std::string fullStr = siteLoginPassToDel + ' ' + encPass + '\n';
+                int len = fullStr.length();
+                fullFile.replace(left, len, "");
+                overwriteFile(getPathToPass(), fullFile);
+                cout << "Password and site:login pair were successfully deleted\n";
+            } else {
+                cout << "Has no this site:login pass recording in file with passwords\n";
+            }
+        }
 
     }
 
@@ -149,6 +163,28 @@ public:
         }
     }
 
+    void checkPassword(const std::string &siteLoginPassStr) {
+        std::string fullStr = readWholeFile(getPathToPass());
+        int left = fullStr.find(siteLoginPassStr);
+
+        if (left != -1) {
+            std::vector<std::string> siteLoginVec = getSiteAndLogin(siteLoginPassStr);
+            std::string encPass = getEncryptedPassword(siteLoginVec[0], siteLoginVec[1]);
+            std::string fullStr = siteLoginPassStr + ' ' + encPass + '\n';
+        }
+        if (fullStr.find(siteLoginPassStr) != -1)
+            cout << "Site:login password in file!\n";
+        else
+            cout << "Site:login password not in file!\n";
+    }
+
+    void changeMasterPassword(std::string &newPassword) {
+        std::string newHashedPass = mainHash(newPassword);
+        fullRefresh(masterPass, newHashedPass);
+        overwriteFile(pathToMasterPass, newHashedPass);
+        masterPass = newHashedPass;
+        cout << "Master password has been changed!\n";
+    }
 
     void printHelpMessage() {
         cout << HELP_TEXT;
@@ -174,18 +210,52 @@ private:
         return pathToPass;
     }
 
+    void fullRefresh(const std::string &oldPass, const std::string &newPass) {
+        // oldPass and newPass must be hashed
+
+        std::string fullFile = readWholeFile(getPathToPass());
+        int left = fullFile.find(' ');
+        int right = fullFile.find('\n', left);
+        while (left != -1) {
+            std::string encPass = fullFile.substr(left, right);
+            std::string decPass = decode(encPass, oldPass);
+            std::string newEncPass = encode(decPass, newPass);
+            int len = lenComp(encPass, newEncPass);
+            fullFile.replace(left, right - 1, newEncPass);
+            left = fullFile.find(' ');
+            if (left != -1)
+                right = fullFile.find('\n', left);
+        }
+        overwriteFile(getPathToPass(), fullFile);
+    }
+
+    static int lenComp(const std::string &first, const std::string &second) {
+        int len;
+        if (first.length() < second.length())
+            len = first.length();
+        else
+            len = second.length();
+        return len;
+    }
+
     void editPathToPass(const std::string &newPath) const {
         ofstream fout(path, ios::trunc);
         fout << newPath;
         fout.close();
     }
 
+    static void overwriteFile(const std::string &filePath, const std::string &newFilling) {
+        ofstream fout(filePath, ios::trunc);
+        fout << newFilling;
+        fout.close();
+    }
+
     std::string getMasterPass() {
         ifstream fin(pathToMasterPass);
-        std::string masterPass;
-        getline(fin, masterPass);
+        std::string masterPassToReturn;
+        getline(fin, masterPassToReturn);
 
-        return masterPass;
+        return masterPassToReturn;
     }
 
     std::string getEncryptedPassword(const std::string &site, const std::string &login) {
