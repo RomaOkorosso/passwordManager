@@ -4,7 +4,7 @@
 
 
 std::string encode(const std::string &toEncode, const std::string &key) {
-    std::string ABC_STRING = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=_!@#%:?(){};:<>[]`~";
+    std::string ABC_STRING = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=_!@#%:?(),{};:<>[]`~";
     int len = ABC_STRING.length();
     std::string mes = toEncode, codeMes;
     int countRot = 0;
@@ -19,7 +19,7 @@ std::string encode(const std::string &toEncode, const std::string &key) {
 }
 
 std::string decode(const std::string &toDecode, const std::string &key) {
-    std::string ABC_STRING = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=_!@#%:?(){};:<>[]`~";
+    std::string ABC_STRING = "1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=_!@#%:?(),{};:<>[]`~";
     int len = ABC_STRING.length();
     std::string mes = toDecode, decodeMes;
     int countRot = 0;

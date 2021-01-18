@@ -36,8 +36,7 @@ const unsigned int SHA256::sha256_k[64] = //UL = uint32
          0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
          0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2};
 
-void SHA256::transform(const unsigned char *message, unsigned int block_nb)
-{
+void SHA256::transform(const unsigned char *message, unsigned int block_nb) {
     uint32 w[64];
     uint32 wv[8];
     uint32 t1, t2;
@@ -50,7 +49,7 @@ void SHA256::transform(const unsigned char *message, unsigned int block_nb)
             SHA2_PACK32(&sub_block[j << 2], &w[j]);
         }
         for (j = 16; j < 64; j++) {
-            w[j] =  SHA256_F4(w[j -  2]) + w[j -  7] + SHA256_F3(w[j - 15]) + w[j - 16];
+            w[j] = SHA256_F4(w[j - 2]) + w[j - 7] + SHA256_F3(w[j - 15]) + w[j - 16];
         }
         for (j = 0; j < 8; j++) {
             wv[j] = m_h[j];
@@ -74,8 +73,7 @@ void SHA256::transform(const unsigned char *message, unsigned int block_nb)
     }
 }
 
-void SHA256::init()
-{
+void SHA256::init() {
     m_h[0] = 0x6a09e667;
     m_h[1] = 0xbb67ae85;
     m_h[2] = 0x3c6ef372;
@@ -88,8 +86,7 @@ void SHA256::init()
     m_tot_len = 0;
 }
 
-void SHA256::update(const unsigned char *message, unsigned int len)
-{
+void SHA256::update(const unsigned char *message, unsigned int len) {
     unsigned int block_nb;
     unsigned int new_len, rem_len, tmp_len;
     const unsigned char *shifted_message;
@@ -111,8 +108,7 @@ void SHA256::update(const unsigned char *message, unsigned int len)
     m_tot_len += (block_nb + 1) << 6;
 }
 
-void SHA256::final(unsigned char *digest)
-{
+void SHA256::final(unsigned char *digest) {
     unsigned int block_nb;
     unsigned int pm_len;
     unsigned int len_b;
@@ -125,25 +121,24 @@ void SHA256::final(unsigned char *digest)
     m_block[m_len] = 0x80;
     SHA2_UNPACK32(len_b, m_block + pm_len - 4);
     transform(m_block, block_nb);
-    for (i = 0 ; i < 8; i++) {
+    for (i = 0; i < 8; i++) {
         SHA2_UNPACK32(m_h[i], &digest[i << 2]);
     }
 }
 
-std::string sha256(std::string input)
-{
+std::string sha256(std::string input) {
     unsigned char digest[SHA256::DIGEST_SIZE];
-    memset(digest,0,SHA256::DIGEST_SIZE);
+    memset(digest, 0, SHA256::DIGEST_SIZE);
 
     SHA256 ctx = SHA256();
     ctx.init();
-    ctx.update( (unsigned char*)input.c_str(), input.length());
+    ctx.update((unsigned char *) input.c_str(), input.length());
     ctx.final(digest);
 
-    char buf[2*SHA256::DIGEST_SIZE+1];
-    buf[2*SHA256::DIGEST_SIZE] = 0;
+    char buf[2 * SHA256::DIGEST_SIZE + 1];
+    buf[2 * SHA256::DIGEST_SIZE] = 0;
     for (int i = 0; i < SHA256::DIGEST_SIZE; i++)
-        sprintf(buf+i*2, "%02x", digest[i]);
+        sprintf(buf + i * 2, "%02x", digest[i]);
     return std::string(buf);
 }
 
@@ -188,7 +183,7 @@ public:
         }
 
         if (toCheck == pass) {
-             std::cout << "Success!\n";
+            std::cout << "Success!\n";
             hasLogin = true;
         } else if (pass.empty()) {
             std::ofstream fout(pathToMasterPass);
@@ -491,5 +486,6 @@ private:
         return toReturn;
     }
 };
+
 
 #endif //MAIN_CPP_PM_H
