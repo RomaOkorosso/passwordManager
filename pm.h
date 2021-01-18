@@ -228,8 +228,8 @@ public:
             } else {
                 fin.close();
                 std::ofstream out(pathToPass, std::ios::app);
-                newPass += '\n';
-                out << siteLogin << ' ' << newPass;
+
+                out << siteLogin << ' ' << newPass << '\n';
                 std::cout << "Password for " << siteLogin << " has been added\n";
             }
         }
@@ -281,8 +281,7 @@ public:
                 }
                 if (fullStr.find("get") == -1) {
                     i++;
-                    // TODO rewrite to edit path file
-                    path = argv[i];
+                    editPathToPass(fullStr);
                 } else {
                     vector<string> siteAndLogin;
                     siteAndLogin = getSiteAndLogin(fullStr);
@@ -348,14 +347,13 @@ private:
         // oldPass and newPass must be hashed
 
         std::string fullFile = readWholeFile(getPathToPass());
-        int left = fullFile.find(' ');
+        int left = fullFile.find(' ') + 1;
         int right = fullFile.find('\n', left);
         while (left != -1) {
-            std::string encPass = fullFile.substr(left, right);
+            std::string encPass = fullFile.substr(left, right - left);
             std::string decPass = decode(encPass, oldPass);
             std::string newEncPass = encode(decPass, newPass);
-            int len = lenComp(encPass, newEncPass);
-            fullFile.replace(left, right - 1, newEncPass);
+            fullFile.replace(left, right - left, newEncPass);
             left = fullFile.find(' ', left + 1);
             if (left != -1)
                 right = fullFile.find('\n', left);
