@@ -153,8 +153,7 @@ struct PasswordManager {
 public:
 
     static std::string mainHash(std::string str) {
-        std::string a = "asdf";
-        std::string output = sha256("");
+        std::string output = sha256(str);
         return output;
     }
 
